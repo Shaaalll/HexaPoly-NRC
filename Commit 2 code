@@ -1,0 +1,39 @@
+import sys
+import time
+import RPi.GPIO as GPIO
+
+
+
+ENA=13
+Forward=27
+Backward=22
+sleeptime=1
+x = 0
+
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(Forward, GPIO.OUT)
+GPIO.setup(Backward, GPIO.OUT)
+GPIO.setup(ENA, GPIO.OUT)
+
+def forward(x):
+    GPIO.output(ENA, GPIO.HIGH)
+    GPIO.output(Forward, GPIO.HIGH)
+    GPIO.output(Backward, GPIO.LOW)
+    print("Moving Forward")
+    time.sleep(x)
+    GPIO.output(Forward, GPIO.LOW)
+
+def reverse(x):
+    GPIO.output(ENA, GPIO.HIGH)
+    GPIO.output(Backward, GPIO.HIGH)
+    GPIO.output(Forward, GPIO.LOW)
+    print("Moving Backward")
+    time.sleep(x)
+    GPIO.output(Backward, GPIO.LOW)
+
+while (1):
+
+    forward(5)
+
+    reverse(5)
+    #GPIO.cleanup()
