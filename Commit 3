@@ -1,0 +1,181 @@
+
+from functions import *
+import time
+import RPi.GPIO as GPIO
+import pygame
+import Encoder
+
+#Motor pins
+ENB = 18
+LN3 = 23
+LN4 = 24
+
+#Servo pins
+# servoPIN = 21
+
+#encoder pins
+EncoderA = 20
+EncoderB = 21
+
+#Ultrasonic Sensor pins
+Echo = 25
+Trigger = 18
+
+#color sensor pins
+s2 = 7
+s3 = 1
+signal = 12
+NUM_CYCLES = 10
+
+
+
+
+# ultra = DistanceSensor (echo= Echo, trigger = Trigger)
+
+
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(LN3, GPIO.OUT)
+GPIO.setup(LN4, GPIO.OUT)
+GPIO.setup(ENB, GPIO.OUT)
+# GPIO.setup(Trigger, GPIO.OUT)
+# GPIO.setup(Echo, GPIO.IN)
+# GPIO.setup(TACHO1, GPIO.IN)
+# GPIO.setup(TACHO2, GPIO.IN)
+
+enc = Encoder.Encoder(EncoderA, EncoderB)
+
+
+GPIO.output(Trigger, GPIO.LOW)
+time.sleep(2)
+
+GPIO.setup(signal, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.setup(s2, GPIO.OUT)
+GPIO.setup(s3, GPIO.OUT)
+GPIO.output(s2, GPIO.LOW)
+GPIO.output(s3, GPIO.HIGH)
+
+# GPIO.setup(servoPIN, GPIO.OUT)
+# p = GPIO.PWM(servoPIN, 50)  # GPIO 17 for PWM with 50Hz
+# p.start(7)  # Initialization
+
+
+def getcolor():
+    start = time.time()
+    for impulse_count in range(NUM_CYCLES):
+        GPIO.wait_for_edge(signal, GPIO.FALLING)
+    duration = time.time() - start  # seconds to run for loop
+    red = round(NUM_CYCLES / duration / 100)  # in Hz
+    return red
+
+readings = list()
+num_reading = 10
+def getavgcolor():
+    while (len(readings)< num_reading):
+        readings.append(getcolor())
+
+    readings.pop(0)
+    readings.append(getcolor())
+    avg = sum(readings)/num_reading
+    print(avg)
+
+def servomove(degrees):#degrees -180 to 180
+    print("servo moving")
+    dc = ((12-2)* (degrees+180)/360) +2
+    p.ChangeDutyCycle(dc)
+
+def distance():
+
+    GPIO.output(Trigger, True)
+    time.sleep(0.00001)
+    GPIO.output(Trigger, False)
+    StartTime = time.time()
+    StopTime = time.time()
+    while GPIO.input(Echo) == 0:
+        StartTime = time.time()
+    while GPIO.input(Echo) == 1:
+        StopTime = time.time()
+    TimeElapsed = StopTime - StartTime
+    distances = (TimeElapsed * 34300) / 2
+
+    return distances
+
+def forward():
+
+
+    GPIO.output(ENB, GPIO.HIGH)
+    GPIO.output(LN4, GPIO.LOW)
+    GPIO.output(LN3, GPIO.HIGH)
+
+    # time.sleep(x)
+    # GPIO.output(LN4,GPIO.HIGH)
+
+def stop():
+    GPIO.output(LN4, GPIO.HIGH)
+
+pygame.init()
+pygame.display.set_mode((100,100))
+exit = False
+while (not exit):
+    # print("distance " + str(distance()))
+    # forward(5)
+    # time.sleep(5)
+    # print(enc.read())
+
+    for event in pygame.event.get():
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_w:
+                enc.pos = 0
+                forward()
+                while (enc.read() * -1) <10000: #(getavgcolor()) > 330:
+                    print(enc.read() * -1)
+                stop()
+
+            elif event.key == pygame.K_q:
+                print(distance())
+                # print(ultra.distance*100)
+            elif event.key == pygame.K_e:
+                servomove(-90)
+            elif event.key == pygame.K_r:
+                servomove(0)
+            elif event.key == pygame.K_t:
+                servomove(90)
+            elif event.key == pygame.K_z:
+                forward()
+            elif event.key == pygame.K_p:
+                getavgcolor()
+            elif event.key == pygame.K_ESCAPE:
+                print ("Exiting program")
+                exit = True
+GPIO.cleanup()
+
+# servo = GPIO.PWM(27, 50)
+# servo.start(0)
+
+
+
+
+
+
+# def servoleft():
+#     servo.ChangeDutyCycle(1)
+#     time.sleep(0.5)
+#
+# def servoright():
+#     servo.ChangeDutyCycle(-1)
+#     time.sleep(0.5)
+
+
+# while True:
+#
+#     if distance < 25 :
+#         servoright(1)
+#         forward(5)
+#     elif 40 < distance < 25 :
+#         forward(5)
+#     else :
+#         servoleft(1)
+#         forward(5)
+
+
+
+
